@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournament Reports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #07111c;
+      --sur:      #0d1e2e;
+      --sur2:     #132537;
+      --sur3:     #1a3047;
+      --gold:     #c9a227;
+      --gold-lt:  #f0c040;
+      --gold-dim: #6b5412;
+      --green:    #1a6b35;
+      --green-lt: #2ecc71;
+      --blue:     #3a8fd4;
+      --blue-lt:  #7ec8f5;
+      --orange:   #e67e22;
+      --orange-lt:#f39c12;
+      --text:     #dde6f0;
+      --dim:      #7a90a8;
+      --border:   #1e3550;
+      --shadow:   rgba(0,0,0,0.55);
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 15% 65%, rgba(26,107,53,.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 35% at 85% 18%, rgba(201,162,39,.06) 0%, transparent 70%);
+    }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      background: linear-gradient(180deg,#040d15 0%,var(--sur) 100%);
+      border-bottom: 2px solid var(--gold);
+      text-align: center; overflow: hidden;
+    }
+    .hdr-suits { font-size:10px; letter-spacing:6px; color:rgba(201,162,39,.2); padding:8px 0 0; white-space:nowrap; overflow:hidden; }
+    .hdr-title { font-family:'Rajdhani',sans-serif; font-size:clamp(1.5rem,4vw,2.5rem); font-weight:700; color:var(--gold-lt); letter-spacing:4px; text-transform:uppercase; text-shadow:0 0 28px rgba(240,192,64,.35); padding:8px 0 2px; }
+    .hdr-sub   { font-size:.75rem; color:var(--dim); letter-spacing:3px; text-transform:uppercase; padding-bottom:14px; }
+
+    /* ── SELECTOR CARD ───────────────────────────────────── */
+    .sel-wrap { max-width:700px; margin:36px auto 0; padding:0 16px; }
+    .sel-card {
+      background: var(--sur);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 26px 26px 22px;
+      box-shadow: 0 12px 40px var(--shadow);
+    }
+
+    /* ── LIST LOADING STATE ──────────────────────────────── */
+    .list-loading { text-align:center; padding:16px 0 8px; }
+    .spin { width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;display:inline-block; }
+    .spin-lbl { color:var(--dim); font-size:.8rem; margin-top:10px; letter-spacing:2px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── EMPTY / ERROR STATES ────────────────────────────── */
+    .state-msg {
+      display:none; text-align:center; padding:18px;
+      border-radius:10px; font-size:.9rem; margin-bottom:4px;
+    }
+    .state-msg.empty { background:rgba(120,144,168,.1); border:1px solid var(--border); color:var(--dim); }
+    .state-msg.error { background:rgba(192,57,43,.12); border:1px solid rgba(192,57,43,.4); color:#e74c3c; }
+
+    /* ── DROPDOWN AREA ───────────────────────────────────── */
+    .drop-area { display:none; }
+    .drop-label {
+      display: flex; justify-content:space-between; align-items:center;
+      font-size:.72rem; font-weight:600; letter-spacing:3px; color:var(--gold);
+      text-transform:uppercase; margin-bottom:10px;
+    }
+    .btn-refresh {
+      background: transparent; border:1px solid var(--border); border-radius:6px;
+      color:var(--dim); font-size:.75rem; padding:4px 10px; cursor:pointer;
+      transition:color .2s, border-color .2s;
+    }
+    .btn-refresh:hover { color:var(--gold); border-color:var(--gold); }
+
+    /* Styled native select */
+    .sel-row { display:flex; gap:0; align-items:stretch; }
+    select#tourney {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-right: none;
+      border-radius: 8px 0 0 8px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: .95rem;
+      padding: 12px 36px 12px 14px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a90a8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      transition: border-color .2s;
+    }
+    select#tourney:focus { border-color:var(--gold); }
+    select#tourney option { background: #0d1e2e; color: var(--text); padding:6px; }
+    select#tourney optgroup { color:var(--gold); font-style:normal; font-weight:700; font-size:.78rem; }
+
+    .btn-go {
+      background: linear-gradient(135deg,var(--gold),#e8b830);
+      border: none; border-radius: 0 8px 8px 0;
+      color: #06101a; font-family:'Rajdhani',sans-serif; font-size:1rem;
+      font-weight:700; letter-spacing:2px; padding:0 22px;
+      cursor:pointer; text-transform:uppercase; white-space:nowrap;
+      flex-shrink: 0;
+      transition:transform .12s,box-shadow .2s,opacity .2s;
+    }
+    .btn-go:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 4px 16px rgba(201,162,39,.4); }
+    .btn-go:disabled { opacity:.35; cursor:not-allowed; }
+
+    /* ── SELECTED PREVIEW CARD ───────────────────────────── */
+    .preview-card {
+      background: var(--sur2);
+      border: 1px solid var(--border);
+      border-radius:10px;
+      padding:14px 18px;
+      margin-top:14px;
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      align-items:center;
+      gap:12px;
+    }
+    .prev-state-dot {
+      width:10px; height:10px; border-radius:50%; flex-shrink:0;
+    }
+    .prev-state-dot.upcoming { background:var(--orange-lt); box-shadow:0 0 6px var(--orange-lt); }
+    .prev-state-dot.finished { background:var(--green-lt);  box-shadow:0 0 6px var(--green-lt); }
+    .prev-state-dot.other    { background:var(--dim); }
+    .prev-body {}
+    .prev-name   { font-weight:600; font-size:.95rem; color:var(--text); }
+    .prev-league { font-size:.78rem; color:var(--gold); margin-top:2px; }
+    .prev-meta   { text-align:right; }
+    .prev-date   { font-size:.82rem; font-weight:600; color:var(--text); }
+    .prev-time   { font-size:.78rem; color:var(--dim); margin-top:2px; }
+    .prev-badge  {
+      display:inline-block; font-size:.68rem; font-weight:700;
+      padding:2px 10px; border-radius:10px; letter-spacing:1px; text-transform:uppercase; margin-top:4px;
+    }
+    .prev-badge.upcoming { background:rgba(243,156,18,.18); border:1px solid rgba(243,156,18,.4); color:var(--orange-lt); }
+    .prev-badge.finished { background:rgba(46,204,113,.12); border:1px solid rgba(46,204,113,.35); color:var(--green-lt); }
+    .prev-badge.other    { background:rgba(120,144,168,.1); border:1px solid var(--border); color:var(--dim); }
+
+    /* ── RESULT LOADING ──────────────────────────────────── */
+    .res-spin { display:none; text-align:center; padding:28px 0; }
+    .err-box  { display:none; background:rgba(192,57,43,.12); border:1px solid rgba(192,57,43,.4); border-radius:8px; color:#e74c3c; font-size:.88rem; padding:11px 16px; margin-top:14px; }
+
+    /* ── RESULTS AREA ────────────────────────────────────── */
+    .results { display:none; max-width:1160px; margin:28px auto 60px; padding:0 16px; animation:fadeUp .4s ease both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+
+    /* ── MODE BADGE ──────────────────────────────────────── */
+    .mode-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 18px; border-radius:20px; font-family:'Rajdhani',sans-serif; font-size:.82rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:18px; }
+    .mode-badge.announce { background:rgba(230,126,34,.18); border:1px solid rgba(230,126,34,.5); color:var(--orange-lt); }
+    .mode-badge.results  { background:rgba(46,204,113,.12);  border:1px solid rgba(46,204,113,.4); color:var(--green-lt); }
+
+    /* ── TOURNAMENT INFO CARD ────────────────────────────── */
+    .t-card { background:var(--sur); border:1px solid var(--gold-dim); border-radius:16px; overflow:hidden; margin-bottom:20px; box-shadow:0 0 36px rgba(201,162,39,.10),0 8px 28px var(--shadow); }
+    .t-top  { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:22px 26px 18px; background:linear-gradient(135deg,#060f1a 0%,var(--sur2) 100%); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .league-badge { display:inline-block; background:linear-gradient(135deg,var(--gold),#a07c1a); color:#06101a; font-family:'Rajdhani',sans-serif; font-size:.74rem; font-weight:700; padding:4px 14px; border-radius:20px; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+    .t-name { font-family:'Rajdhani',sans-serif; font-size:clamp(1.2rem,3vw,1.8rem); font-weight:700; color:var(--text); letter-spacing:1px; }
+    .link-grp { display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; align-items:center; }
+    .btn-lnk  { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:7px; font-size:.8rem; font-weight:600; text-decoration:none; transition:transform .12s; white-space:nowrap; }
+    .btn-lnk:hover { transform:translateY(-2px); }
+    .btn-game  { background:var(--blue);  color:#fff; box-shadow:0 2px 10px rgba(58,143,212,.35); }
+    .btn-lobby { background:var(--green); color:#fff; box-shadow:0 2px 10px rgba(26,107,53,.35); }
+    .t-meta  { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--border); }
+    @media(max-width:600px){ .t-meta { grid-template-columns:repeat(2,1fr); } }
+    .m-cell  { padding:13px 16px; border-right:1px solid var(--border); text-align:center; }
+    .m-cell:last-child { border-right:none; }
+    .m-lbl   { font-size:.68rem; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin-bottom:4px; }
+    .m-val   { font-size:.95rem; font-weight:600; color:var(--text); }
+    .m-val.gold { color:var(--gold-lt); }
+    .m-val.ora  { color:var(--orange-lt); }
+
+    /* ── ANNOUNCEMENT HERO ───────────────────────────────── */
+    .ann-hero { background:linear-gradient(135deg,#1a1000,#251a00,#1a1000); border:1px solid rgba(230,126,34,.4); border-radius:16px; padding:32px 24px 28px; text-align:center; margin-bottom:20px; box-shadow:0 0 50px rgba(230,126,34,.12),0 8px 28px var(--shadow); position:relative; overflow:hidden; }
+    .ann-hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 55% at 50% 0%,rgba(230,126,34,.10) 0%,transparent 70%); pointer-events:none; }
+    .ann-eyebrow  { font-size:.7rem; letter-spacing:5px; color:var(--orange-lt); text-transform:uppercase; margin-bottom:12px; }
+    .ann-headline { font-family:'Rajdhani',sans-serif; font-size:clamp(1.8rem,5vw,3rem); font-weight:700; color:var(--orange-lt); text-shadow:0 0 30px rgba(243,156,18,.45); line-height:1.05; }
+    .ann-shoutout { color:var(--dim); font-size:.9rem; margin-top:10px; }
+    .ann-detail-row { display:flex; flex-wrap:wrap; justify-content:center; gap:14px 28px; margin-top:22px; }
+    .ann-detail .lbl      { font-size:.68rem; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin-bottom:3px; }
+    .ann-detail .val      { font-size:.97rem; font-weight:600; color:var(--text); }
+    .ann-detail .val.time-val { color:var(--orange-lt); font-size:1.1rem; }
+    .ann-added { display:inline-block; background:rgba(243,156,18,.15); border:1px solid rgba(243,156,18,.45); border-radius:8px; padding:8px 20px; margin-top:16px; color:var(--orange-lt); font-weight:600; font-size:.95rem; }
+
+    /* ── CHAMPION CARD ───────────────────────────────────── */
+    .champ-card { background:linear-gradient(135deg,#0e2010,#132b14,#0a1c0c); border:1px solid rgba(201,162,39,.45); border-radius:16px; padding:30px 20px 26px; text-align:center; margin-bottom:20px; position:relative; overflow:hidden; box-shadow:0 0 50px rgba(201,162,39,.13),0 8px 28px var(--shadow); }
+    .champ-card::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 55% at 50% 0%,rgba(201,162,39,.10) 0%,transparent 70%); pointer-events:none; }
+    .champ-eyebrow { font-size:.7rem; letter-spacing:5px; color:var(--gold); text-transform:uppercase; margin-bottom:10px; }
+    .champ-name   { font-family:'Rajdhani',sans-serif; font-size:clamp(2rem,7vw,3.6rem); font-weight:700; color:var(--gold-lt); line-height:1; text-shadow:0 0 36px rgba(240,192,64,.5); margin-bottom:12px; }
+    .champ-prize  { font-size:1.2rem; font-weight:600; color:var(--green-lt); }
+
+    /* ── ITM STRIP ───────────────────────────────────────── */
+    .itm-strip { background:var(--sur); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:20px; }
+    .itm-hdr  { background:var(--sur2); padding:12px 22px; font-family:'Rajdhani',sans-serif; font-size:.95rem; font-weight:700; letter-spacing:3px; color:var(--gold-lt); text-transform:uppercase; border-bottom:1px solid var(--border); }
+    .itm-row  { display:grid; grid-template-columns:110px 1fr auto; align-items:center; gap:12px; padding:10px 22px; border-bottom:1px solid var(--border); transition:background .15s; }
+    .itm-row:last-child { border-bottom:none; }
+    .itm-row:hover { background:var(--sur2); }
+    .itm-pos  { font-weight:700; font-size:.9rem; color:var(--dim); }
+    .itm-pos.p1 { color:var(--gold-lt); }
+    .itm-pos.p2 { color:#b0c4de; }
+    .itm-pos.p3 { color:#cd7f32; }
+    .itm-name  { font-weight:600; font-size:.95rem; }
+    .itm-prize { font-weight:600; font-size:.9rem; color:var(--green-lt); white-space:nowrap; }
+
+    /* ── POST PANELS ─────────────────────────────────────── */
+    .posts-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    @media(max-width:740px){ .posts-grid { grid-template-columns:1fr; } }
+    .post-panel { background:var(--sur); border:1px solid var(--border); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
+    .post-head  { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); background:var(--sur2); }
+    .post-title-wrap .post-title { font-family:'Rajdhani',sans-serif; font-size:.98rem; font-weight:700; letter-spacing:3px; text-transform:uppercase; }
+    .post-title-wrap .post-desc  { font-size:.68rem; color:var(--dim); margin-top:2px; letter-spacing:1px; }
+    .post-title.forum     { color:var(--blue-lt); }
+    .post-title.teams     { color:var(--green-lt); }
+    .post-title.ann-forum { color:var(--orange-lt); }
+    .post-title.ann-teams { color:#f8c471; }
+    .btn-copy { display:inline-flex; align-items:center; gap:5px; padding:7px 14px; border-radius:6px; font-size:.78rem; font-weight:600; cursor:pointer; border:1px solid; background:transparent; transition:background .15s; letter-spacing:1px; white-space:nowrap; }
+    .btn-copy.forum     { color:var(--blue-lt);   border-color:var(--blue-lt); }
+    .btn-copy.teams     { color:var(--green-lt);  border-color:var(--green-lt); }
+    .btn-copy.ann-forum { color:var(--orange-lt); border-color:var(--orange-lt); }
+    .btn-copy.ann-teams { color:#f8c471;           border-color:#f8c471; }
+    .btn-copy:hover { background:rgba(255,255,255,.07); }
+    .btn-copy.done  { background:var(--green); border-color:var(--green); color:#fff; }
+    .post-body { flex:1; }
+    textarea { width:100%; min-height:370px; background:#04090f; border:none; color:#c0d4e8; font-family:'Consolas','Courier New',monospace; font-size:.76rem; line-height:1.65; padding:15px 17px; resize:vertical; outline:none; display:block; }
+
+    .section-label { font-family:'Rajdhani',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--dim); margin-bottom:14px; padding-left:2px; }
+
+    footer { text-align:center; padding:24px 16px; color:var(--dim); font-size:.72rem; letter-spacing:1px; border-top:1px solid var(--border); margin-top:20px; }
+
+    /* ── FULL VISUAL PRESENTATION CARD ─────────────────── */
+    .pres-actions { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .btn-print { background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--dim); font-size:.78rem; padding:6px 14px; cursor:pointer; transition:color .2s,border-color .2s; }
+    .btn-print:hover { color:var(--gold); border-color:var(--gold); }
+
+    .pres-card {
+      background: #091420;
+      border: 2px solid var(--gold-dim);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(201,162,39,.12), 0 12px 44px var(--shadow);
+      margin-bottom: 28px;
+    }
+    .pres-hdr {
+      background: linear-gradient(180deg,#040c16 0%,#0d1e2e 100%);
+      padding: 22px 28px 18px;
+      text-align: center;
+      border-bottom: 1px solid var(--gold-dim);
+    }
+    .pres-league-name {
+      font-family: 'Rajdhani',sans-serif;
+      font-size: clamp(1rem,2.8vw,1.6rem);
+      font-weight: 700; letter-spacing: 5px;
+      color: var(--gold-lt);
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(240,192,64,.3);
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 6px;
+      transition: text-shadow .2s;
+    }
+    .pres-league-name:hover { text-shadow: 0 0 30px rgba(240,192,64,.65); }
+    .pres-tourney-name {
+      font-family: 'Rajdhani',sans-serif;
+      font-size: clamp(1.3rem,3.5vw,2.2rem);
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+    .pres-meta-row {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      max-width: 740px;
+      margin: 0 auto;
+    }
+    @media(max-width:520px){ .pres-meta-row { grid-template-columns:repeat(2,1fr); } }
+    .pres-meta-cell { background:#101f30; padding:10px 12px; text-align:center; }
+    .pres-meta-lbl  { font-size:.6rem; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin-bottom:3px; }
+    .pres-meta-val  { font-size:.9rem; font-weight:600; color:var(--text); }
+    .pres-meta-val.gold { color:var(--gold-lt); }
+
+    .pres-appreciation {
+      background: linear-gradient(135deg,#2a1000,#3d1800,#2a1000);
+      border-top: 1px solid rgba(243,156,18,.4);
+      border-bottom: 1px solid rgba(243,156,18,.4);
+      padding: 18px 24px;
+      text-align: center;
+      position: relative;
+    }
+    .pres-appreciation::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 55% at 50% 50%,rgba(243,156,18,.10) 0%,transparent 70%); pointer-events:none; }
+    .pres-app-label {
+      font-family: 'Rajdhani',sans-serif;
+      font-size: clamp(1.1rem,3vw,1.7rem);
+      font-weight: 700; letter-spacing: 3px;
+      color: var(--orange-lt);
+      text-shadow: 0 0 24px rgba(243,156,18,.55);
+    }
+    .pres-app-sub { font-size:.92rem; color:var(--orange-lt); opacity:.85; margin-top:5px; font-weight:600; }
+
+    .pres-champ {
+      background: linear-gradient(180deg,#0e2210 0%,#091809 100%);
+      padding: 30px 24px 26px;
+      text-align: center;
+      border-bottom: 1px solid rgba(201,162,39,.2);
+      position: relative;
+    }
+    .pres-champ::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(201,162,39,.10) 0%,transparent 70%); pointer-events:none; }
+    .pres-champ-eyebrow { font-size:.65rem; letter-spacing:5px; color:var(--gold); text-transform:uppercase; margin-bottom:10px; }
+    .pres-champ-name  { font-family:'Rajdhani',sans-serif; font-size:clamp(2.4rem,7vw,4rem); font-weight:700; color:var(--gold-lt); text-shadow:0 0 40px rgba(240,192,64,.55); line-height:1; margin-bottom:12px; }
+    .pres-champ-prize { font-size:1.2rem; font-weight:600; color:var(--green-lt); }
+
+    .pres-lower {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+    @media(max-width:560px){ .pres-lower { grid-template-columns:1fr; } }
+    .pres-lower-sec { padding:18px 22px; }
+    .pres-lower-sec + .pres-lower-sec { border-left:1px solid var(--border); }
+    .pres-lower-hdr { font-family:'Rajdhani',sans-serif; font-size:.85rem; font-weight:700; letter-spacing:3px; color:var(--gold-lt); text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:9px; margin-bottom:11px; }
+
+    .pres-itm-row { display:grid; grid-template-columns:90px 1fr auto; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:.87rem; }
+    .pres-itm-row:last-child { border-bottom:none; }
+    .pres-itm-pos   { font-weight:700; color:var(--dim); }
+    .pres-itm-pos.p1 { color:var(--gold-lt); }
+    .pres-itm-pos.p2 { color:#b0c4de; }
+    .pres-itm-pos.p3 { color:#cd7f32; }
+    .pres-itm-name  { font-weight:600; color:var(--text); }
+    .pres-itm-prize { font-weight:600; color:var(--green-lt); font-size:.82rem; white-space:nowrap; }
+
+    .pres-ft-row { padding:6px 0; font-size:.9rem; color:var(--text); border-bottom:1px solid rgba(255,255,255,.04); font-weight:500; }
+    .pres-ft-row:last-child { border-bottom:none; }
+    .pres-ft-pos { color:var(--dim); font-size:.78rem; display:inline-block; width:30px; }
+
+    .pres-links { background:#06101a; padding:14px 22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .pres-link-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 22px; border-radius:7px; font-size:.84rem; font-weight:600; text-decoration:none; background:var(--blue); color:#fff; transition:transform .12s,box-shadow .15s; box-shadow:0 2px 10px rgba(58,143,212,.3); }
+    .pres-link-btn:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(58,143,212,.45); }
+    .pres-link-lobby { background:var(--green); box-shadow:0 2px 10px rgba(26,107,53,.3); }
+    .pres-link-lobby:hover { box-shadow:0 4px 16px rgba(26,107,53,.45); }
+    .pres-link-reg { background:var(--orange); box-shadow:0 2px 10px rgba(230,126,34,.3); }
+    .pres-link-reg:hover { box-shadow:0 4px 16px rgba(230,126,34,.5); }
+
+    /* ── COPY IMAGE BUTTON ──────────────────────────────── */
+    .btn-copy-img { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--dim); font-size:.78rem; cursor:pointer; transition:color .2s,border-color .2s,background .2s; white-space:nowrap; }
+    .btn-copy-img:hover:not(:disabled) { color:var(--gold); border-color:var(--gold); }
+    .btn-copy-img:disabled { opacity:.5; cursor:not-allowed; }
+    .btn-copy-img.done { background:var(--green); border-color:var(--green); color:#fff; }
+    .btn-copy-img.fail { background:#c0392b; border-color:#c0392b; color:#fff; }
+
+    /* ── ANNOUNCEMENT PRESENTATION CARD ────────────────── */
+    .ann-pres-card { border-color:rgba(230,126,34,.45); box-shadow:0 0 60px rgba(230,126,34,.10), 0 12px 44px var(--shadow); }
+    .ann-pres-hdr  { border-bottom-color:rgba(230,126,34,.3) !important; }
+    .ann-pres-headline {
+      font-family: 'Rajdhani',sans-serif;
+      font-size: clamp(1.8rem,5vw,3rem);
+      font-weight: 700; letter-spacing: 5px;
+      color: var(--orange-lt);
+      text-shadow: 0 0 30px rgba(243,156,18,.5);
+      text-transform: uppercase;
+      margin: 10px 0 6px;
+    }
+    .ann-pres-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .ann-pres-det-cell { background:#101f30; padding:14px 18px; text-align:center; }
+    .ann-pres-det-lbl  { font-size:.6rem; letter-spacing:2px; color:var(--dim); text-transform:uppercase; margin-bottom:4px; }
+    .ann-pres-det-val  { font-size:1rem; font-weight:600; color:var(--text); }
+    .ann-pres-det-val.time { color:var(--orange-lt); font-size:1.1rem; }
+    .ann-pres-det-val.gold { color:var(--gold-lt); }
+
+    @media print {
+      body > *:not(.results) { display:none !important; }
+      .results > *:not(.pres-actions):not(.pres-card):not(#presCard) { display:none !important; }
+      .pres-card { border:none !important; box-shadow:none !important; border-radius:0 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="hdr-suits">♠ &nbsp;♥ &nbsp;♦ &nbsp;♣ &nbsp;♠ &nbsp;♥ &nbsp;♦ &nbsp;♣ &nbsp;♠ &nbsp;♥ &nbsp;♦ &nbsp;♣ &nbsp;♠ &nbsp;♥ &nbsp;♦ &nbsp;♣ &nbsp;♠ &nbsp;♥ &nbsp;♦ &nbsp;♣</div>
+    <div class="hdr-title">♠ &nbsp; Tournament Reports &nbsp; ♣</div>
+    <div class="hdr-sub">Replay Poker League · Announcements &amp; Results</div>
+  </header>
+
+  <!-- ── SELECTOR CARD ──────────────────────────────────── -->
+  <div class="sel-wrap">
+    <div class="sel-card">
+
+      <!-- Loading leagues -->
+      <div class="list-loading" id="listLoad">
+        <div class="spin"></div>
+        <div class="spin-lbl">Loading tournaments…</div>
+      </div>
+
+      <!-- Error fetching list -->
+      <div class="state-msg error" id="listErr"></div>
+
+      <!-- No tournaments found -->
+      <div class="state-msg empty" id="listEmpty">
+        No tournaments found in the 3-day window (yesterday · today · tomorrow · day after).
+        <br><br>
+        <button class="btn-refresh" onclick="loadList()">🔄 Try Again</button>
+      </div>
+
+      <!-- Dropdown area -->
+      <div class="drop-area" id="dropArea">
+        <div class="drop-label">
+          <span>♦ &nbsp; Select Tournament</span>
+          <button class="btn-refresh" onclick="loadList()" title="Reload tournament list">🔄 Refresh</button>
+        </div>
+
+        <div class="sel-row">
+          <select id="tourney" onchange="onSelect()">
+            <option value="">— Select a tournament —</option>
+          </select>
+          <button class="btn-go" id="genBtn" onclick="gen()" disabled>Generate ▶</button>
+        </div>
+
+        <!-- Preview of selected tournament -->
+        <div id="preview" style="display:none" class="preview-card">
+          <div id="prevDot" class="prev-state-dot"></div>
+          <div class="prev-body">
+            <div class="prev-name"   id="prevName">—</div>
+            <div class="prev-league" id="prevLeague">—</div>
+            <div id="prevBadge" class="prev-badge"></div>
+          </div>
+          <div class="prev-meta">
+            <div class="prev-date" id="prevDate">—</div>
+            <div class="prev-time" id="prevTime">—</div>
+          </div>
+        </div>
+
+        <!-- Error from getReportData -->
+        <div class="err-box" id="errBox"></div>
+      </div>
+
+    </div>
+
+    <!-- Spinner while fetching report -->
+    <div class="res-spin" id="resSpin">
+      <div class="spin"></div>
+      <div class="spin-lbl">Fetching report data…</div>
+    </div>
+  </div>
+
+  <!-- ── RESULTS ─────────────────────────────────────────── -->
+  <div class="results" id="results">
+
+    <div id="modeBadge" class="mode-badge"></div>
+
+    <!-- Tournament info card (shared) -->
+    <div class="t-card">
+      <div class="t-top">
+        <div>
+          <div class="league-badge" id="leagueBadge">—</div>
+          <div class="t-name" id="tName">—</div>
+        </div>
+        <div class="link-grp">
+          <a id="gameLink"  class="btn-lnk btn-game"  href="#" target="_blank" rel="noopener">🎮 View Game</a>
+          <a id="lobbyLink" class="btn-lnk btn-lobby" href="#" target="_blank" rel="noopener">🏠 Lobby</a>
+        </div>
+      </div>
+      <div class="t-meta" id="tMeta"></div>
+    </div>
+
+    <!-- ANNOUNCEMENT MODE -->
+    <div id="annSection" style="display:none">
+
+      <!-- ── Announcement presentation card ─────────────── -->
+      <div class="pres-actions">
+        <span class="section-label">📣 &nbsp; Announcement Presentation</span>
+        <button class="btn-copy-img" id="annCopyImgBtn" onclick="captureCard('annPresCard','annCopyImgBtn')">📷 Copy Image</button>
+      </div>
+      <div class="pres-card ann-pres-card" id="annPresCard">
+        <div class="pres-hdr ann-pres-hdr">
+          <a id="annPresLeague" class="pres-league-name" href="#" target="_blank" rel="noopener">—</a>
+          <div class="ann-pres-headline" id="annPresHeadline">YOU ARE INVITED</div>
+          <div class="pres-tourney-name" id="annPresTourney">—</div>
+        </div>
+        <div class="pres-appreciation" id="annPresApp" style="display:none">
+          <div class="pres-app-label">🎊 PLAYER APPRECIATION GAME 🎊</div>
+          <div class="pres-app-sub" id="annPresAppSub"></div>
+        </div>
+        <div class="ann-pres-details" id="annPresDetails"></div>
+        <div class="pres-links">
+          <a id="annPresRegLink"   class="pres-link-btn pres-link-reg"   href="#" target="_blank" rel="noopener">👉 Register Now</a>
+          <a id="annPresLobbyLink" class="pres-link-btn pres-link-lobby" href="#" target="_blank" rel="noopener">🏠 League Lobby</a>
+        </div>
+      </div>
+
+      <!-- ── Old hero detail strip (keep for reference info) ── -->
+      <div class="section-label">📋 &nbsp; Copy-Ready Posts</div>
+      <div class="posts-grid">
+        <div class="post-panel">
+          <div class="post-head">
+            <div class="post-title-wrap">
+              <div class="post-title ann-forum">♥ Forum Announcement</div>
+              <div class="post-desc">Paste into the Replay Poker forum editor</div>
+            </div>
+            <button class="btn-copy ann-forum" id="copyAF" onclick="doCopy('annForum')">📋 Copy</button>
+          </div>
+          <div class="post-body"><textarea id="annForumTxt" readonly spellcheck="false"></textarea></div>
+        </div>
+        <div class="post-panel">
+          <div class="post-head">
+            <div class="post-title-wrap">
+              <div class="post-title ann-teams">♦ Teams Announcement</div>
+              <div class="post-desc">Paste into your MS Teams channel</div>
+            </div>
+            <button class="btn-copy ann-teams" id="copyAT" onclick="doCopy('annTeams')">📋 Copy</button>
+          </div>
+          <div class="post-body"><textarea id="annTeamsTxt" readonly spellcheck="false"></textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS MODE -->
+    <div id="resSection" style="display:none">
+
+      <!-- ── Full visual presentation card ───────────────── -->
+      <div class="pres-actions">
+        <span class="section-label">🖥️ &nbsp; Tournament Presentation</span>
+        <button class="btn-copy-img" id="resCopyImgBtn" onclick="captureCard('presCard','resCopyImgBtn')">📷 Copy Image</button>
+      </div>
+      <div class="pres-card" id="presCard">
+        <div class="pres-hdr">
+          <a id="presLeague" class="pres-league-name" href="#" target="_blank" rel="noopener">—</a>
+          <div class="pres-tourney-name" id="presTourney">—</div>
+          <div class="pres-meta-row" id="presMeta"></div>
+        </div>
+        <div class="pres-appreciation" id="presApp" style="display:none">
+          <div class="pres-app-label">🎊 PLAYER APPRECIATION GAME 🎊</div>
+          <div class="pres-app-sub" id="presAppSub"></div>
+        </div>
+        <div class="pres-champ">
+          <div class="pres-champ-eyebrow">♠ &nbsp; TOURNAMENT CHAMPION &nbsp; ♠</div>
+          <div class="pres-champ-name"  id="presChampName">—</div>
+          <div class="pres-champ-prize" id="presChampPrize">—</div>
+        </div>
+        <div class="pres-lower" id="presLower"></div>
+        <div class="pres-links">
+          <a id="presGameLink"  class="pres-link-btn" href="#" target="_blank" rel="noopener">🎮 View Game</a>
+          <a id="presLobbyLink" class="pres-link-btn pres-link-lobby" href="#" target="_blank" rel="noopener">🏠 League Lobby</a>
+        </div>
+      </div>
+
+      <!-- ── Copy-ready text posts ─────────────────────────── -->
+      <div class="section-label">📋 &nbsp; Copy-Ready Posts</div>
+      <div class="posts-grid">
+        <div class="post-panel">
+          <div class="post-head">
+            <div class="post-title-wrap">
+              <div class="post-title forum">♥ Forum Report</div>
+              <div class="post-desc">Paste directly into the Replay Poker forum</div>
+            </div>
+            <button class="btn-copy forum" id="copyF" onclick="doCopy('forum')">📋 Copy</button>
+          </div>
+          <div class="post-body"><textarea id="forumTxt" readonly spellcheck="false"></textarea></div>
+        </div>
+        <div class="post-panel">
+          <div class="post-head">
+            <div class="post-title-wrap">
+              <div class="post-title teams">♦ Teams Report</div>
+              <div class="post-desc">Paste into your MS Teams channel</div>
+            </div>
+            <button class="btn-copy teams" id="copyT" onclick="doCopy('teams')">📋 Copy</button>
+          </div>
+          <div class="post-body"><textarea id="teamsTxt" readonly spellcheck="false"></textarea></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /results -->
+
+  <footer>♠ &nbsp;♥ &nbsp;♦ &nbsp;♣ &nbsp; Replay Poker League Tournament Reports &nbsp;♣ &nbsp;♦ &nbsp;♥ &nbsp;♠</footer>
+
+  <!-- ── Image modal ──────────────────────────────────────── -->
+  <div id="imgModal" onclick="if(event.target===this)closeModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:20px;">
+    <div style="color:#c9a227;font-family:'Rajdhani',sans-serif;font-size:1rem;letter-spacing:3px;text-transform:uppercase;text-align:center;">
+      Right-click the image → <strong>Copy image</strong> &nbsp;·&nbsp; or use the Save button below
+    </div>
+    <img id="modalImg" src="" alt="Tournament Card" style="max-width:95vw;max-height:72vh;border-radius:12px;box-shadow:0 0 50px rgba(0,0,0,.9);display:block;cursor:context-menu;" title="Right-click → Copy image">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <a id="modalDownload" href="" download="tournament-card.png" style="display:inline-flex;align-items:center;gap:6px;padding:9px 22px;border-radius:7px;background:#3a8fd4;color:#fff;text-decoration:none;font-size:.85rem;font-weight:600;">💾 Save Image</a>
+      <button onclick="closeModal()" style="padding:9px 22px;border-radius:7px;border:1px solid #555;background:transparent;color:#aaa;font-size:.85rem;cursor:pointer;">✕ Close</button>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    let tourneyMap = {}; // id → tournament object from getTournamentList
+
+    const MEDAL     = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣'];
+    const POS_CLASS = ['p1','p2','p3'];
+    const TA = { annForum:'annForumTxt', annTeams:'annTeamsTxt', forum:'forumTxt', teams:'teamsTxt' };
+    const BT = { annForum:'copyAF', annTeams:'copyAT', forum:'copyF', teams:'copyT' };
+
+    // ── State labels / dot classes ─────────────────────────
+    const UPCOMING = ['announced','registering','late_registration'];
+    function stateClass(state) {
+      if (UPCOMING.includes(state)) return 'upcoming';
+      if (state === 'finished')     return 'finished';
+      return 'other';
+    }
+    function stateLabel(state) {
+      if (state === 'announced')          return '📢 Announced';
+      if (state === 'registering')        return '📝 Registering';
+      if (state === 'late_registration')  return '⏱ Late Reg';
+      if (state === 'finished')           return '✅ Finished';
+      return '🔴 ' + state;
+    }
+
+    // ── Load tournament list on page start ─────────────────
+    window.onload = loadList;
+
+    function loadList() {
+      show('listLoad'); hide('listErr'); hide('listEmpty'); hide('dropArea');
+      document.getElementById('results').style.display = 'none';
+      tourneyMap = {};
+      google.script.run
+        .withSuccessHandler(onList)
+        .withFailureHandler(onListFail)
+        .getTournamentList();
+    }
+
+    function onList(data) {
+      hide('listLoad');
+      if (data.error) { showListErr(data.error); return; }
+      if (!data.tournaments || data.tournaments.length === 0) { show('listEmpty'); return; }
+
+      // Build option map
+      tourneyMap = {};
+      data.tournaments.forEach(t => { tourneyMap[t.id] = t; });
+
+      // Populate select with optgroups
+      const sel = document.getElementById('tourney');
+      sel.innerHTML = '<option value="">— Select a tournament —</option>';
+
+      // Group by when + state category
+      const groups = {
+        upcoming_past:   { label: '📅 Yesterday — Upcoming',  items: [] },
+        upcoming_today:  { label: '📢 Today — Upcoming',       items: [] },
+        upcoming_future: { label: '📅 Tomorrow / Day After — Upcoming', items: [] },
+        finished_past:   { label: '✅ Yesterday — Results Available',   items: [] },
+        finished_today:  { label: '✅ Today — Results Available',        items: [] },
+        finished_future: { label: '✅ Future — Results Available',       items: [] },
+        other:           { label: '⏳ Other',                            items: [] }
+      };
+
+      data.tournaments.forEach(t => {
+        const sc = stateClass(t.state);
+        const key = sc === 'other' ? 'other' : `${sc === 'finished' ? 'finished' : 'upcoming'}_${t.when}`;
+        const g = groups[key] || groups.other;
+        const label = `${t.dayOfWeek} ${t.dateShort} · ${t.time} — ${t.name} (${t.leagueName})`;
+        g.items.push({ id: t.id, label });
+      });
+
+      Object.values(groups).forEach(g => {
+        if (g.items.length === 0) return;
+        const og = document.createElement('optgroup');
+        og.label = g.label;
+        g.items.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.id;
+          opt.textContent = item.label;
+          og.appendChild(opt);
+        });
+        sel.appendChild(og);
+      });
+
+      show('dropArea');
+    }
+
+    function onListFail(err) {
+      hide('listLoad');
+      showListErr('Server error: ' + (err.message || String(err)));
+    }
+
+    function showListErr(msg) {
+      const el = document.getElementById('listErr');
+      el.textContent = '⚠️  ' + msg;
+      show('listErr');
+    }
+
+    // ── Dropdown selection → update preview ───────────────
+    function onSelect() {
+      const id  = document.getElementById('tourney').value;
+      const btn = document.getElementById('genBtn');
+      const prev = document.getElementById('preview');
+      hideErr();
+
+      if (!id) { btn.disabled = true; prev.style.display = 'none'; return; }
+
+      const t = tourneyMap[id];
+      btn.disabled = false;
+      prev.style.display = 'grid';
+
+      const sc = stateClass(t.state);
+      document.getElementById('prevDot').className    = 'prev-state-dot ' + sc;
+      document.getElementById('prevName').textContent   = t.name;
+      document.getElementById('prevLeague').textContent = t.leagueName;
+      document.getElementById('prevDate').textContent   = t.dayOfWeek + ', ' + t.dateShort;
+      document.getElementById('prevTime').textContent   = t.time;
+
+      const badge = document.getElementById('prevBadge');
+      badge.textContent = stateLabel(t.state);
+      badge.className   = 'prev-badge ' + sc;
+    }
+
+    // ── Generate report ───────────────────────────────────
+    function gen() {
+      const id = document.getElementById('tourney').value;
+      if (!id) return;
+      hideErr();
+      document.getElementById('resSpin').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('genBtn').disabled = true;
+      // Pass the leagueId from the dropdown for reliable league name lookup
+      const t = tourneyMap[id];
+      const leagueId = t ? (t.leagueId || '') : '';
+      google.script.run
+        .withSuccessHandler(onData)
+        .withFailureHandler(onFail)
+        .getReportData(id, leagueId);
+    }
+
+    function onData(d) {
+      document.getElementById('resSpin').style.display = 'none';
+      document.getElementById('genBtn').disabled = false;
+      if (d.error) { showErr(d.error); return; }
+      try {
+        // Shared card
+        document.getElementById('leagueBadge').textContent = d.leagueName;
+        document.getElementById('tName').textContent       = d.name;
+        document.getElementById('gameLink').href           = d.tournamentUrl;
+        document.getElementById('lobbyLink').textContent   = '🏠 ' + d.leagueName + ' Lobby';
+        document.getElementById('lobbyLink').href          = d.lobbyUrl;
+
+        d.type === 'announcement' ? showAnn(d) : showRes(d);
+
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+      } catch(e) {
+        showErr('Display error: ' + e.message);
+        console.error('onData error:', e);
+      }
+    }
+
+    function showAnn(d) {
+      setBadge('📢  Upcoming Tournament — ' + d.state, 'announce');
+      document.getElementById('tMeta').innerHTML =
+        mc('📅 Date', d.dateShort) + mc('⏰ Time', d.time, 'ora') +
+        mc('🃏 Game', d.game)      + mc('💰 Entry', d.buyIn);
+
+      // ── Announcement presentation card ─────────────────
+      const headline = d.isAppreciation ? '🎊 PLAYER APPRECIATION' : '✨ YOU ARE INVITED ✨';
+      document.getElementById('annPresHeadline').textContent = headline;
+
+      const presLeague = document.getElementById('annPresLeague');
+      presLeague.textContent = '♠  ' + d.leagueName + '  ♣';
+      presLeague.href = d.lobbyUrl;
+
+      document.getElementById('annPresTourney').textContent = d.name;
+
+      // Appreciation banner
+      const annAppEl = document.getElementById('annPresApp');
+      if (d.isAppreciation && d.prizeAdded) {
+        document.getElementById('annPresAppSub').textContent = d.prizeAdded + ' Added to Prize Pool';
+        annAppEl.style.display = 'block';
+      } else {
+        annAppEl.style.display = 'none';
+      }
+
+      // Details grid
+      let det = '';
+      det += admc('📅 Date',  d.dayOfWeek + ', ' + d.date);
+      det += admc('⏰ Time',  d.time, 'time');
+      det += admc('🃏 Game',  d.game);
+      det += admc('💰 Entry', d.buyIn);
+      if (d.prizeAdded) {
+        det += admc('🎁 ' + (d.isAppreciation ? 'Chips Added' : 'Prize Added'), d.prizeAdded, 'gold');
+      }
+      document.getElementById('annPresDetails').innerHTML = det;
+
+      // Links
+      document.getElementById('annPresRegLink').href          = d.tournamentUrl;
+      document.getElementById('annPresLobbyLink').href        = d.lobbyUrl;
+      document.getElementById('annPresLobbyLink').textContent = '🏠 ' + d.leagueName + ' Lobby';
+
+      document.getElementById('annForumTxt').value = d.forumPost;
+      document.getElementById('annTeamsTxt').value = d.teamsPost;
+      document.getElementById('annSection').style.display = 'block';
+      document.getElementById('resSection').style.display = 'none';
+    }
+
+    // Announcement detail cell helper
+    function admc(lbl, val, cls) {
+      return `<div class="ann-pres-det-cell"><div class="ann-pres-det-lbl">${lbl}</div><div class="ann-pres-det-val${cls?' '+cls:''}">${esc(String(val||'—'))}</div></div>`;
+    }
+
+    // ── Capture card as image ──────────────────────────────────
+    // Hides the link-button bar before capture (dead links in a PNG
+    // look broken; the live links are already in the top info card).
+    // Tries navigator.clipboard.write() first — works when the app
+    // is in a top-level context or clipboard-write is permitted.
+    // Falls back to the modal (right-click → Copy image / Save) when
+    // the GAS iframe blocks the Clipboard API.
+    function captureCard(cardId, btnId) {
+      const el  = document.getElementById(cardId);
+      const btn = document.getElementById(btnId);
+      if (!el) return;
+      if (btn) { btn.textContent = '⏳ Rendering…'; btn.disabled = true; }
+
+      // Temporarily hide the link bar — buttons are dead in a PNG
+      const linksBar = el.querySelector('.pres-links');
+      if (linksBar) linksBar.style.display = 'none';
+
+      html2canvas(el, {
+        backgroundColor: '#091420',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      })
+      .then(function(canvas) {
+        if (linksBar) linksBar.style.display = '';  // restore live links immediately
+        const dataUrl = canvas.toDataURL('image/png');
+
+        // Try clipboard API first
+        if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+          return new Promise(function(resolve) {
+            canvas.toBlob(function(blob) {
+              if (!blob) { resolve({ mode:'modal', dataUrl:dataUrl }); return; }
+              navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+                .then(function()  { resolve({ mode:'clipboard' }); })
+                .catch(function() { resolve({ mode:'modal', dataUrl:dataUrl }); });
+            }, 'image/png');
+          });
+        }
+        return { mode:'modal', dataUrl:dataUrl };
+      })
+      .then(function(result) {
+        if (btn) btn.disabled = false;
+        if (result.mode === 'clipboard') {
+          if (btn) {
+            btn.textContent = '✅ Copied!';
+            btn.classList.add('done');
+            setTimeout(function() { btn.textContent = '📷 Copy Image'; btn.classList.remove('done'); }, 2400);
+          }
+        } else {
+          if (btn) btn.textContent = '📷 Copy Image';
+          document.getElementById('modalImg').src = result.dataUrl;
+          document.getElementById('modalDownload').href = result.dataUrl;
+          document.getElementById('imgModal').style.display = 'flex';
+        }
+      })
+      .catch(function(err) {
+        if (linksBar) linksBar.style.display = '';
+        if (btn) { btn.textContent = '📷 Copy Image'; btn.disabled = false; }
+        console.error('captureCard error:', err);
+        alert('Render failed: ' + err.message);
+      });
+    }
+
+    function closeModal() {
+      document.getElementById('imgModal').style.display = 'none';
+      document.getElementById('modalImg').src = '';
+    }
+
+    function showRes(d) {
+      setBadge('✅  Tournament Complete — Final Results', 'results');
+      document.getElementById('tMeta').innerHTML =
+        mc('📅 Date', d.date)    + mc('🃏 Game', d.game) +
+        mc('💰 Buy-in', d.buyIn) + mc('🏆 Prize Pool', d.prizePool, 'gold');
+
+      // ── Presentation card ──────────────────────────────
+      // League name as clickable link to league lobby
+      const presLeague = document.getElementById('presLeague');
+      presLeague.textContent = '♠  ' + d.leagueName + '  ♣';
+      presLeague.href = d.lobbyUrl;
+
+      document.getElementById('presTourney').textContent = d.name;
+      document.getElementById('presMeta').innerHTML =
+        pmc('📅 Date', d.date) + pmc('🃏 Game', d.game) +
+        pmc('💰 Buy-in', d.buyIn) + pmc('🏆 Prize Pool', d.prizePool, true);
+
+      // Player Appreciation banner
+      const appEl = document.getElementById('presApp');
+      if (d.isAppreciation && d.prizeAdded) {
+        document.getElementById('presAppSub').textContent = d.prizeAdded + ' Added to Prize Pool';
+        appEl.style.display = 'block';
+      } else {
+        appEl.style.display = 'none';
+      }
+
+      // Champion
+      if (d.winner) {
+        document.getElementById('presChampName').textContent  = '👑  ' + d.winner.username;
+        document.getElementById('presChampPrize').textContent = '💰 Prize: ' + d.winner.prize;
+      }
+
+      // ITM + Final Table columns
+      const presLower = document.getElementById('presLower');
+      let lo = '';
+      if (d.itmPlayers && d.itmPlayers.length > 0) {
+        lo += '<div class="pres-lower-sec"><div class="pres-lower-hdr">💰 &nbsp; In the Money</div>';
+        d.itmPlayers.forEach((p,i) => {
+          lo += `<div class="pres-itm-row"><div class="pres-itm-pos ${POS_CLASS[i]||''}">${MEDAL[i]||''} ${p.position}${p.suffix}</div><div class="pres-itm-name">${esc(p.username)}</div><div class="pres-itm-prize">${esc(p.prize)}</div></div>`;
+        });
+        lo += '</div>';
+      }
+      if (d.finalTablePlayers && d.finalTablePlayers.length > 1) {
+        lo += '<div class="pres-lower-sec"><div class="pres-lower-hdr">🔥 &nbsp; Final Table</div>';
+        d.finalTablePlayers.forEach(p => {
+          lo += `<div class="pres-ft-row"><span class="pres-ft-pos">${p.position}${p.suffix}</span>${esc(p.username)}</div>`;
+        });
+        lo += '</div>';
+      }
+      presLower.innerHTML = lo;
+
+      // Presentation links
+      document.getElementById('presGameLink').href        = d.tournamentUrl;
+      document.getElementById('presLobbyLink').href       = d.lobbyUrl;
+      document.getElementById('presLobbyLink').textContent = '🏠 ' + d.leagueName + ' Lobby';
+
+      document.getElementById('forumTxt').value = d.forumPost;
+      document.getElementById('teamsTxt').value = d.teamsPost;
+      document.getElementById('resSection').style.display = 'block';
+      document.getElementById('annSection').style.display = 'none';
+    }
+
+    function pmc(lbl, val, isGold) {
+      return `<div class="pres-meta-cell"><div class="pres-meta-lbl">${lbl}</div><div class="pres-meta-val${isGold?' gold':''}">${esc(String(val||'—'))}</div></div>`;
+    }
+
+    function setBadge(txt, cls) {
+      const b = document.getElementById('modeBadge');
+      b.textContent = txt; b.className = 'mode-badge ' + cls;
+    }
+
+    function mc(lbl, val, cls) {
+      return `<div class="m-cell"><div class="m-lbl">${lbl}</div><div class="m-val${cls?' '+cls:''}">${esc(String(val||'—'))}</div></div>`;
+    }
+
+    function onFail(err) {
+      document.getElementById('resSpin').style.display = 'none';
+      document.getElementById('genBtn').disabled = false;
+      showErr('Server error: ' + (err.message || String(err)));
+    }
+
+    function showErr(m) { const e=document.getElementById('errBox'); e.textContent='⚠️  '+m; e.style.display='block'; }
+    function hideErr()  { document.getElementById('errBox').style.display='none'; }
+
+    function show(id) { document.getElementById(id).style.display='block'; }
+    function hide(id) { document.getElementById(id).style.display='none'; }
+
+    function doCopy(which) {
+      const text = document.getElementById(TA[which]).value;
+      const btn  = document.getElementById(BT[which]);
+      const done = ok => {
+        btn.textContent = ok ? '✅ Copied!' : '❌ Failed';
+        btn.classList.add('done');
+        setTimeout(()=>{ btn.textContent='📋 Copy'; btn.classList.remove('done'); }, 2200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(()=>done(true)).catch(()=>fallback(text,done));
+      } else { fallback(text,done); }
+    }
+
+    function fallback(text,done) {
+      try {
+        const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;top:0;left:0';
+        document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(true);
+      } catch(e){ done(false); }
+    }
+
+    function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  </script>
+  <!-- html2canvas: renders DOM elements to canvas for clipboard copy -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
