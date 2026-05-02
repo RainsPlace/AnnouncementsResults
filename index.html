@@ -85,6 +85,7 @@
       transition:color .2s, border-color .2s;
     }
     .btn-refresh:hover { color:var(--gold); border-color:var(--gold); }
+    .cache-age { font-size:.68rem; color:var(--dim); letter-spacing:1px; opacity:.7; }
 
     /* Styled native select */
     .sel-row { display:flex; gap:0; align-items:stretch; }
@@ -426,14 +427,17 @@
       <div class="state-msg empty" id="listEmpty">
         No tournaments found in the 3-day window (yesterday · today · tomorrow · day after).
         <br><br>
-        <button class="btn-refresh" onclick="loadList()">🔄 Try Again</button>
+        <button class="btn-refresh" onclick="loadList(true)">🔄 Try Again</button>
       </div>
 
       <!-- Dropdown area -->
       <div class="drop-area" id="dropArea">
         <div class="drop-label">
           <span>♦ &nbsp; Select Tournament</span>
-          <button class="btn-refresh" onclick="loadList()" title="Reload tournament list">🔄 Refresh</button>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="cache-age" id="cacheAge"></span>
+            <button class="btn-refresh" onclick="loadList(true)" title="Force-refresh from casino.org">🔄 Refresh</button>
+          </div>
         </div>
 
         <div class="sel-row">
@@ -640,20 +644,30 @@
     // ── Load tournament list on page start ─────────────────
     window.onload = loadList;
 
-    function loadList() {
+    // forceRefresh=true bypasses cache and fetches live from casino.org
+    function loadList(forceRefresh) {
       show('listLoad'); hide('listErr'); hide('listEmpty'); hide('dropArea');
       document.getElementById('results').style.display = 'none';
+      document.getElementById('cacheAge').textContent = '';
       tourneyMap = {};
       google.script.run
         .withSuccessHandler(onList)
         .withFailureHandler(onListFail)
-        .getTournamentList();
+        .getTournamentList(!!forceRefresh);
     }
 
     function onList(data) {
       hide('listLoad');
       if (data.error) { showListErr(data.error); return; }
       if (!data.tournaments || data.tournaments.length === 0) { show('listEmpty'); return; }
+
+      // Show cache age (cachedAt is set by Cache.js when storing)
+      if (data.cachedAt) {
+        const ageMs  = Date.now() - new Date(data.cachedAt).getTime();
+        const ageMin = Math.round(ageMs / 60000);
+        const ageEl  = document.getElementById('cacheAge');
+        ageEl.textContent = ageMin < 1 ? 'live data' : 'cached ' + ageMin + 'm ago';
+      }
 
       // Build option map
       tourneyMap = {};
