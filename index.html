@@ -618,6 +618,9 @@
   </div>
 
   <script>
+    // ── GAS API endpoint ───────────────────────────────────
+    const GAS_API = 'https://script.google.com/macros/s/AKfycbwKSJQ4RBrODR2WaBD6aui6hRdrO3qfgcTxa0kKhKNX4hGSDjB5XFTJlEPsBdOTcuaF/exec';
+
     // ── State ──────────────────────────────────────────────
     let tourneyMap = {}; // id → tournament object from getTournamentList
 
@@ -650,10 +653,11 @@
       document.getElementById('results').style.display = 'none';
       document.getElementById('cacheAge').textContent = '';
       tourneyMap = {};
-      google.script.run
-        .withSuccessHandler(onList)
-        .withFailureHandler(onListFail)
-        .getTournamentList(!!forceRefresh);
+      const url = GAS_API + '?action=list' + (forceRefresh ? '&force=true' : '');
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(onList)
+        .catch(function(err) { onListFail({ message: String(err) }); });
     }
 
     function onList(data) {
@@ -759,10 +763,11 @@
       // Pass the leagueId from the dropdown for reliable league name lookup
       const t = tourneyMap[id];
       const leagueId = t ? (t.leagueId || '') : '';
-      google.script.run
-        .withSuccessHandler(onData)
-        .withFailureHandler(onFail)
-        .getReportData(id, leagueId);
+      const url = GAS_API + '?action=report&id=' + encodeURIComponent(id) + '&leagueId=' + encodeURIComponent(leagueId);
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(onData)
+        .catch(function(err) { onFail({ message: String(err) }); });
     }
 
     function onData(d) {
