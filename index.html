@@ -87,6 +87,19 @@
     .btn-refresh:hover { color:var(--gold); border-color:var(--gold); }
     .cache-age { font-size:.68rem; color:var(--dim); letter-spacing:1px; opacity:.7; }
 
+    .or-divider { display:flex; align-items:center; gap:12px; margin:18px 0 12px; }
+    .or-divider::before,.or-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+    .or-divider span { font-size:.65rem; color:var(--dim); letter-spacing:2px; text-transform:uppercase; white-space:nowrap; }
+    .manual-input {
+      flex:1; min-width:0;
+      background:var(--bg); border:1px solid var(--border); border-right:none;
+      border-radius:8px 0 0 8px; color:var(--text);
+      font-family:'Inter',sans-serif; font-size:.95rem; padding:12px 14px;
+      outline:none; transition:border-color .2s;
+    }
+    .manual-input::placeholder { color:var(--dim); }
+    .manual-input:focus { border-color:var(--gold); }
+
     /* Styled native select */
     .sel-row { display:flex; gap:0; align-items:stretch; }
     select#tourney {
@@ -332,6 +345,12 @@
     .pres-champ-name  { font-family:'Rajdhani',sans-serif; font-size:clamp(2.4rem,7vw,4rem); font-weight:700; color:var(--gold-lt); text-shadow:0 0 40px rgba(240,192,64,.55); line-height:1; margin-bottom:12px; }
     .pres-champ-prize { font-size:1.2rem; font-weight:600; color:var(--green-lt); }
 
+    /* ── BOUNTY HUNTERS ────────────────────────────────── */
+    .pres-bounty { padding:16px 22px; border-bottom:1px solid var(--border); background:rgba(201,162,39,.04); }
+    .pres-bounty-grid { display:flex; flex-wrap:wrap; gap:6px 28px; margin-top:10px; }
+    .pres-bounty-item { font-size:.88rem; font-weight:500; color:var(--text); }
+    .pres-bounty-item .b-prize { color:var(--gold-lt); font-weight:700; }
+
     .pres-lower {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -461,9 +480,19 @@
           </div>
         </div>
 
-        <!-- Error from getReportData -->
-        <div class="err-box" id="errBox"></div>
       </div>
+
+      <!-- Manual tournament ID entry (always visible) -->
+      <div class="or-divider"><span>or enter ID directly</span></div>
+      <div class="drop-label">♦ &nbsp; Enter Tournament ID</div>
+      <div class="sel-row">
+        <input type="text" id="manualId" class="manual-input" placeholder="e.g. 1234567"
+               onkeydown="if(event.key==='Enter')genManual()">
+        <button class="btn-go" id="manualBtn" onclick="genManual()">Generate ▶</button>
+      </div>
+
+      <!-- Error box (shared by dropdown and manual paths) -->
+      <div class="err-box" id="errBox"></div>
 
     </div>
 
@@ -479,8 +508,8 @@
 
     <div id="modeBadge" class="mode-badge"></div>
 
-    <!-- Tournament info card (shared) -->
-    <div class="t-card">
+    <!-- Tournament info card (hidden in announcement mode, shown in results mode) -->
+    <div class="t-card" id="tCard">
       <div class="t-top">
         <div>
           <div class="league-badge" id="leagueBadge">—</div>
@@ -513,10 +542,12 @@
           <div class="pres-app-sub" id="annPresAppSub"></div>
         </div>
         <div class="ann-pres-details" id="annPresDetails"></div>
-        <div class="pres-links">
-          <a id="annPresRegLink"   class="pres-link-btn pres-link-reg"   href="#" target="_blank" rel="noopener">👉 Register Now</a>
-          <a id="annPresLobbyLink" class="pres-link-btn pres-link-lobby" href="#" target="_blank" rel="noopener">🏠 League Lobby</a>
-        </div>
+      </div>
+
+      <!-- Links live outside the card so they stay active after image copy -->
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:14px 0 4px;">
+        <a id="annPresRegLink"   class="pres-link-btn pres-link-reg"   href="#" target="_blank" rel="noopener">👉 Register Now</a>
+        <a id="annPresLobbyLink" class="pres-link-btn pres-link-lobby" href="#" target="_blank" rel="noopener">🏠 League Lobby</a>
       </div>
 
       <!-- ── Old hero detail strip (keep for reference info) ── -->
@@ -568,11 +599,17 @@
           <div class="pres-champ-name"  id="presChampName">—</div>
           <div class="pres-champ-prize" id="presChampPrize">—</div>
         </div>
-        <div class="pres-lower" id="presLower"></div>
-        <div class="pres-links">
-          <a id="presGameLink"  class="pres-link-btn" href="#" target="_blank" rel="noopener">🎮 View Game</a>
-          <a id="presLobbyLink" class="pres-link-btn pres-link-lobby" href="#" target="_blank" rel="noopener">🏠 League Lobby</a>
+        <div class="pres-bounty" id="presBounty" style="display:none">
+          <div class="pres-lower-hdr">🎯 &nbsp; Bounty Hunters</div>
+          <div class="pres-bounty-grid" id="presBountyGrid"></div>
         </div>
+        <div class="pres-lower" id="presLower"></div>
+      </div>
+
+      <!-- Links live outside the card so they stay active after image copy -->
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:14px 0 4px;">
+        <a id="presGameLink"  class="pres-link-btn" href="#" target="_blank" rel="noopener">🎮 View Game</a>
+        <a id="presLobbyLink" class="pres-link-btn pres-link-lobby" href="#" target="_blank" rel="noopener">🏠 League Lobby</a>
       </div>
 
       <!-- ── Copy-ready text posts ─────────────────────────── -->
@@ -770,6 +807,20 @@
         .catch(function(err) { onFail({ message: String(err) }); });
     }
 
+    function genManual() {
+      const id = document.getElementById('manualId').value.trim();
+      if (!id) return;
+      hideErr();
+      document.getElementById('resSpin').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+      document.getElementById('manualBtn').disabled = true;
+      const url = GAS_API + '?action=report&id=' + encodeURIComponent(id);
+      fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(d) { document.getElementById('manualBtn').disabled = false; onData(d); })
+        .catch(function(err) { document.getElementById('manualBtn').disabled = false; onFail({ message: String(err) }); });
+    }
+
     function onData(d) {
       document.getElementById('resSpin').style.display = 'none';
       document.getElementById('genBtn').disabled = false;
@@ -794,6 +845,7 @@
 
     function showAnn(d) {
       setBadge('📢  Upcoming Tournament — ' + d.state, 'announce');
+      document.getElementById('tCard').style.display = 'none';
       document.getElementById('tMeta').innerHTML =
         mc('📅 Date', d.dateShort) + mc('⏰ Time', d.time, 'ora') +
         mc('🃏 Game', d.game)      + mc('💰 Entry', d.buyIn);
@@ -915,6 +967,7 @@
 
     function showRes(d) {
       setBadge('✅  Tournament Complete — Final Results', 'results');
+      document.getElementById('tCard').style.display = '';
       document.getElementById('tMeta').innerHTML =
         mc('📅 Date', d.date)    + mc('🃏 Game', d.game) +
         mc('💰 Buy-in', d.buyIn) + mc('🏆 Prize Pool', d.prizePool, 'gold');
@@ -943,6 +996,18 @@
       if (d.winner) {
         document.getElementById('presChampName').textContent  = '👑  ' + d.winner.username;
         document.getElementById('presChampPrize').textContent = '💰 Prize: ' + d.winner.prize;
+      }
+
+      // Bounty Hunters
+      const bountyEl   = document.getElementById('presBounty');
+      const bountyGrid = document.getElementById('presBountyGrid');
+      if (d.bountyPlayers && d.bountyPlayers.length > 0) {
+        bountyGrid.innerHTML = d.bountyPlayers.map(b =>
+          `<div class="pres-bounty-item">${esc(b.username)} <span class="b-prize">(${esc(b.prize)})</span></div>`
+        ).join('');
+        bountyEl.style.display = '';
+      } else {
+        bountyEl.style.display = 'none';
       }
 
       // ITM + Final Table columns
